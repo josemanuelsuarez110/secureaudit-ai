@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql+psycopg://secureaudit:secureaudit_dev_pass@localhost:5432/secureaudit_dev"
-
+    SYSTEM_DATABASE_URL: str = "postgresql+psycopg://secureaudit_system:secureaudit_system_pass@localhost:5432/secureaudit_dev"
     # JWT
     JWT_SECRET_KEY: str = "change-me"
     JWT_ALGORITHM: str = "HS256"

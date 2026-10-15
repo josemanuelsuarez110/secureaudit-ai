@@ -3,22 +3,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1 import api_router
+from app.core.config import settings
+
 app = FastAPI(
-    title="SecureAudit AI",
+    title=settings.APP_NAME,
     description="SaaS B2B de auditoría continua de seguridad",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# CORS (ajustar en producción)
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Router principal
+app.include_router(api_router)
 
 
 @app.get("/", tags=["root"])
