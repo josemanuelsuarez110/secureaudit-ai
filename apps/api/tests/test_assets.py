@@ -256,9 +256,8 @@ def test_delete_asset(client: TestClient) -> None:
 # =========================================================
 # Verificar assets
 # =========================================================
-
-def test_verify_asset(client: TestClient) -> None:
-    """Miembro puede verificar su asset (simulado)."""
+def test_verify_asset_no_dns_record(client: TestClient) -> None:
+    """Verificar un asset sin TXT configurado → verified=False."""
     data = _register_with_org(client, "verify@test.com", "verify-org")
     headers = _auth(data["access_token"])
     org_id = data["organization"]["id"]
@@ -276,11 +275,43 @@ def test_verify_asset(client: TestClient) -> None:
     )
     assert response.status_code == 200
     result = response.json()
-    assert result["verified"] is True
+    assert result["verified"] is False
     assert result["record_type"] == "TXT"
-    assert "_secureaudit.verify-test.com" == result["record_name"]
+    assert result["record_name"] == "_secureaudit.verify-test.com"
 
-    # Verificar que el status cambió a active
+    get_response = client.get(f"/api/v1/assets/{asset_id}", headers=headers)
+    assert get_response.json()["status"] == "pending_verification"
+    assert get_response.json()["verified_at"] is None
+
+
+def test_verify_asset_with_mocked_dns(client: TestClient, monkeypatch) -> None:
+    """Verificar un asset con DNS mockeado → verified=True."""
+    from app.services import asset as asset_module
+
+    def mock_verify(*args, **kwargs):
+        return True, "Verificación exitosa (mock)"
+
+    monkeypatch.setattr(asset_module, "verify_txt_record", mock_verify)
+
+    data = _register_with_org(client, "mock@test.com", "mock-org")
+    headers = _auth(data["access_token"])
+    org_id = data["organization"]["id"]
+
+    create_response = client.post(
+        f"/api/v1/assets/organizations/{org_id}/assets",
+        json={"domain": "mocked.com"},
+        headers=headers,
+    )
+    asset_id = create_response.json()["id"]
+
+    response = client.post(
+        f"/api/v1/assets/{asset_id}/verify",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["verified"] is True
+
     get_response = client.get(f"/api/v1/assets/{asset_id}", headers=headers)
     assert get_response.json()["status"] == "active"
     assert get_response.json()["verified_at"] is not None

@@ -1,6 +1,7 @@
 """Servicio de assets (dominios)."""
 
 import secrets
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.rls import set_rls_context
 from app.models import Asset, Membership, User
+from app.services.dns import verify_txt_record
 
 
 class AssetError(Exception):
@@ -77,7 +79,6 @@ def create_asset(
     _get_membership(db, user, organization_id)
     set_rls_context(db, user.id)
 
-    # Verificar duplicado (por si acaso)
     existing = db.execute(
         select(Asset).where(
             Asset.organization_id == organization_id,
@@ -98,7 +99,6 @@ def create_asset(
     db.add(asset)
     db.commit()
 
-    # Refrescar con contexto RLS
     set_rls_context(db, user.id)
     asset = db.execute(
         select(Asset).where(Asset.id == asset.id)
@@ -140,19 +140,28 @@ def delete_asset(db: Session, user: User, asset_id: UUID) -> None:
 
 
 def verify_asset(db: Session, user: User, asset_id: UUID) -> dict:
-    """Verifica el asset vía DNS TXT.
-
-    TODO: implementar verificación DNS real.
-    Por ahora, simula la verificación y actualiza el estado.
-    """
+    """Verifica el asset vía DNS TXT."""
     asset = get_asset(db, user, asset_id)
 
     record_name = f"_secureaudit.{asset.domain}"
     record_value = f"secureaudit-verification={asset.verification_token}"
 
-    # TODO: usar dnspython para verificar el TXT real
-    # Por ahora, marcar como verificado automáticamente
-    from datetime import datetime, timezone
+    verified, message = verify_txt_record(
+        domain=asset.domain,
+        expected_value=record_value,
+        record_name=record_name,
+    )
+
+    if not verified:
+        return {
+            "verified": False,
+            "message": message,
+            "domain": asset.domain,
+            "verification_token": asset.verification_token,
+            "record_name": record_name,
+            "record_type": "TXT",
+            "record_value": record_value,
+        }
 
     asset.status = "active"
     asset.verified_at = datetime.now(timezone.utc)
