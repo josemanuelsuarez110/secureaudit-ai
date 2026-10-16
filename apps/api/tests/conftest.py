@@ -26,20 +26,14 @@ def setup_test_database() -> Generator[None, None, None]:
 
     system_engine = create_engine(settings.SYSTEM_DATABASE_URL)
 
-    # 1. Limpiar la BD
     Base.metadata.drop_all(bind=system_engine)
-
-    # 2. Crear tablas
     Base.metadata.create_all(bind=system_engine)
 
-    # 3. Permisos + RLS
     with system_engine.connect() as conn:
-        # 3.1. Permisos al rol de app
         conn.execute(text("GRANT ALL ON ALL TABLES IN SCHEMA public TO secureaudit"))
         conn.execute(text("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO secureaudit"))
         conn.execute(text("GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO secureaudit"))
 
-        # 3.2. Función current_app_user
         conn.execute(text("""
             CREATE OR REPLACE FUNCTION current_app_user() RETURNS uuid AS $$
             BEGIN
@@ -50,7 +44,6 @@ def setup_test_database() -> Generator[None, None, None]:
             $$ LANGUAGE plpgsql STABLE;
         """))
 
-        # 3.3. Función is_member_of
         conn.execute(text("""
             CREATE OR REPLACE FUNCTION is_member_of(org_id uuid) RETURNS boolean
             SECURITY DEFINER
@@ -66,12 +59,10 @@ def setup_test_database() -> Generator[None, None, None]:
             $$ LANGUAGE plpgsql STABLE;
         """))
 
-        # 3.4. RLS en las 3 tablas
         for table in ["organizations", "memberships", "users"]:
             conn.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
             conn.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
 
-        # 3.5. Políticas
         conn.execute(text("""
             CREATE POLICY organizations_isolation ON organizations
             FOR ALL USING (is_member_of(id));
@@ -89,19 +80,19 @@ def setup_test_database() -> Generator[None, None, None]:
 
     yield
 
-    # Teardown
     Base.metadata.drop_all(bind=system_engine)
     system_engine.dispose()
 
 
 @pytest.fixture(autouse=True)
 def clean_tables() -> Generator[None, None, None]:
-    """Limpia las tablas antes de cada test."""
+    """Limpia las tablas Y el contexto RLS antes de cada test."""
     db: Session = SystemSessionLocal()
     try:
         db.execute(text(
             "TRUNCATE memberships, users, organizations RESTART IDENTITY CASCADE"
         ))
+        db.execute(text("SELECT set_config('app.current_user', '', false)"))
         db.commit()
     finally:
         db.close()
@@ -115,6 +106,7 @@ def db() -> Generator[Session, None, None]:
     try:
         yield session
     finally:
+        session.rollback()
         session.close()
 
 
@@ -125,6 +117,7 @@ def system_db() -> Generator[Session, None, None]:
     try:
         yield session
     finally:
+        session.rollback()
         session.close()
 
 

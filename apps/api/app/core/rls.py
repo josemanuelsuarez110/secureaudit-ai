@@ -1,7 +1,8 @@
 """Utilidades para el contexto RLS de PostgreSQL.
 
-IMPORTANTE: el contexto debe establecerse en una transacción
-para que no se filtre entre requests.
+El contexto se establece con `set_config(..., true)` (LOCAL a la transacción).
+Es importante que el consumidor mantenga la transacción abierta mientras
+hace las queries protegidas, y haga commit/rollback al final.
 """
 
 from uuid import UUID
@@ -13,8 +14,7 @@ from sqlalchemy.orm import Session
 def set_rls_context(db: Session, user_id: UUID | str | None) -> None:
     """Establece el contexto RLS para la transacción actual.
 
-    Debe llamarse DENTRO de una transacción activa (con SET LOCAL).
-    Si user_id es None, el contexto se limpia (RLS bloquea todo).
+    IMPORTANTE: no hace commit. El caller decide cuándo cerrar la transacción.
     """
     if user_id:
         db.execute(
@@ -22,11 +22,9 @@ def set_rls_context(db: Session, user_id: UUID | str | None) -> None:
             {"uid": str(user_id)},
         )
     else:
-        db.execute(
-            text("SELECT set_config('app.current_user', '', true)")
-        )
+        db.execute(text("SELECT set_config('app.current_user', '', true)"))
 
 
 def clear_rls_context(db: Session) -> None:
-    """Limpia el contexto RLS (útil al final de un request)."""
+    """Limpia el contexto RLS (LOCAL a la transacción)."""
     db.execute(text("SELECT set_config('app.current_user', '', true)"))
