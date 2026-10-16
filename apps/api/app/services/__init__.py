@@ -26,4 +26,20 @@ __all__ = [
     "create_organization",
     "update_organization",
     "delete_organization",
+    "AssetError",
+    "list_organization_assets",
+    "get_asset",
+    "create_asset",
+    "update_asset",
+    "delete_asset",
+    "verify_asset",
 ]
+from app.services.asset import (
+    AssetError,
+    list_organization_assets,
+    get_asset,
+    create_asset,
+    update_asset,
+    delete_asset,
+    verify_asset,
+)

@@ -14,6 +14,13 @@ from app.schemas.organization import (
     OrganizationUpdate,
     OrganizationResponse,
 )
+from app.schemas.asset import (
+    AssetBase,
+    AssetCreate,
+    AssetUpdate,
+    AssetResponse,
+    AssetVerificationResponse,
+)
 
 __all__ = [
     "UserBase",
@@ -26,4 +33,9 @@ __all__ = [
     "OrganizationCreate",
     "OrganizationUpdate",
     "OrganizationResponse",
+    "AssetBase",
+    "AssetCreate",
+    "AssetUpdate",
+    "AssetResponse",
+    "AssetVerificationResponse",
 ]

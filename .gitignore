@@ -40,3 +40,7 @@ npm-debug.log*
 # Testing
 coverage/
 .pytest_cache/
+
+# Backups de desarrollo
+*.bak
+*.bak.*
