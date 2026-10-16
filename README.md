@@ -1,5 +1,5 @@
 # SecureAudit AI
-
+[![Tests](https://github.com/josemanuelsuarez110/secureaudit-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/josemanuelsuarez110/secureaudit-ai/actions/workflows/tests.yml)
 SaaS B2B de auditoría continua de seguridad para pymes, agencias digitales y consultoras de TI.
 
 ## Visión
