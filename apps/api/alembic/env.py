@@ -1,5 +1,5 @@
 """Configuración de Alembic para migraciones."""
-
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -11,7 +11,10 @@ import app.models  # noqa: F401 — importar todos los modelos
 
 # Configuración de Alembic
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+# Usar SYSTEM_DATABASE_URL si está definida (para que el owner sea correcto)
+db_url = os.environ.get("ALEMBIC_DATABASE_URL") or settings.SYSTEM_DATABASE_URL
+config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
