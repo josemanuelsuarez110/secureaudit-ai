@@ -9,9 +9,10 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 # Sobrescribir variables de entorno ANTES de importar la app
-os.environ["DATABASE_URL"] = "postgresql+psycopg://secureaudit:secureaudit_dev_pass@localhost:5432/secureaudit_test"
-os.environ["SYSTEM_DATABASE_URL"] = "postgresql+psycopg://secureaudit_system:secureaudit_system_pass@localhost:5432/secureaudit_test"
-os.environ["APP_DEBUG"] = "false"
+# Si las vars ya están definidas (CI), usarlas. Si no, usar defaults de localhost.
+os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://secureaudit:secureaudit_dev_pass@localhost:5432/secureaudit_test")
+os.environ.setdefault("SYSTEM_DATABASE_URL", "postgresql+psycopg://secureaudit_system:secureaudit_system_pass@localhost:5432/secureaudit_test")
+os.environ.setdefault("APP_DEBUG", "false")
 
 from app.core.config import settings  # noqa: E402
 from app.db.base import Base  # noqa: E402

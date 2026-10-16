@@ -1,0 +1,86 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://secureaudit:secureaudit_dev_pass@localhost:5432/secureaudit_test
+      SYSTEM_DATABASE_URL: postgresql+psycopg://secureaudit_system:secureaudit_system_pass@localhost:5432/secureaudit_test
+      APP_DEBUG: "false"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "apps/api/requirements.txt"
+
+      - name: Install dependencies
+        working-directory: ./apps/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Setup PostgreSQL (roles + DB test)
+        run: |
+          # Crear roles
+          PGPASSWORD=postgres psql -h localhost -U postgres <<'SQL'
+          CREATE ROLE secureaudit WITH LOGIN PASSWORD 'secureaudit_dev_pass' NOBYPASSRLS;
+          CREATE ROLE secureaudit_system WITH LOGIN PASSWORD 'secureaudit_system_pass' BYPASSRLS;
+
+          -- BD dev
+          CREATE DATABASE secureaudit_dev OWNER secureaudit;
+          GRANT ALL PRIVILEGES ON DATABASE secureaudit_dev TO secureaudit;
+          GRANT ALL PRIVILEGES ON DATABASE secureaudit_dev TO secureaudit_system;
+
+          -- BD test
+          CREATE DATABASE secureaudit_test OWNER secureaudit;
+          GRANT ALL PRIVILEGES ON DATABASE secureaudit_test TO secureaudit;
+          GRANT ALL PRIVILEGES ON DATABASE secureaudit_test TO secureaudit_system;
+          SQL
+
+          # Permisos de schema en BD test
+          PGPASSWORD=postgres psql -h localhost -U postgres -d secureaudit_test <<'SQL'
+          GRANT USAGE, CREATE ON SCHEMA public TO secureaudit;
+          GRANT USAGE, CREATE ON SCHEMA public TO secureaudit_system;
+          SQL
+
+      - name: Run tests
+        working-directory: ./apps/api
+        run: |
+          pytest tests/ -v --tb=short
+
+      - name: Upload pytest cache
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-cache
+          path: apps/api/.pytest_cache/
+          retention-days: 7
