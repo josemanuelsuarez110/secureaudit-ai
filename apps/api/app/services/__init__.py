@@ -33,6 +33,12 @@ __all__ = [
     "update_asset",
     "delete_asset",
     "verify_asset",
+    "ScanError",
+    "list_scan_jobs",
+    "get_scan_job",
+    "get_scan_results",
+    "create_scan_job",
+    "cancel_scan_job",
 ]
 from app.services.asset import (
     AssetError,
@@ -42,4 +48,12 @@ from app.services.asset import (
     update_asset,
     delete_asset,
     verify_asset,
+)
+from app.services.scan import (
+    ScanError,
+    list_scan_jobs,
+    get_scan_job,
+    get_scan_results,
+    create_scan_job,
+    cancel_scan_job,
 )

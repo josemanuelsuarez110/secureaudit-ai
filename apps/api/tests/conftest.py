@@ -110,7 +110,7 @@ def clean_tables() -> Generator[None, None, None]:
     db: Session = SystemSessionLocal()
     try:
         db.execute(text(
-            "TRUNCATE assets, memberships, users, organizations RESTART IDENTITY CASCADE"
+            "TRUNCATE scan_results, scan_jobs, assets, memberships, users, organizations RESTART IDENTITY CASCADE"
         ))
         db.execute(text("SELECT set_config('app.current_user', '', false)"))
         db.commit()

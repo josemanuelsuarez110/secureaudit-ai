@@ -38,4 +38,14 @@ __all__ = [
     "AssetUpdate",
     "AssetResponse",
     "AssetVerificationResponse",
+    "ScanJobCreate",
+    "ScanJobResponse",
+    "ScanResultResponse",
+    "ScanJobDetailResponse",
 ]
+from app.schemas.scan import (
+    ScanJobCreate,
+    ScanJobResponse,
+    ScanResultResponse,
+    ScanJobDetailResponse,
+)
