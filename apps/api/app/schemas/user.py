@@ -14,9 +14,19 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    """Schema para registro de usuario."""
+    """Schema para registro de usuario.
+
+    Si se especifican organization_name y organization_slug, el usuario
+    se convierte en admin de esa organización automáticamente.
+    """
 
     password: str = Field(min_length=8, max_length=128)
+    organization_name: str | None = Field(default=None, max_length=200)
+    organization_slug: str | None = Field(
+        default=None,
+        max_length=100,
+        pattern=r"^[a-z0-9-]+$",
+    )
 
 
 class UserLogin(BaseModel):

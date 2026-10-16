@@ -35,13 +35,26 @@ NormalDb = Annotated[Session, Depends(get_db)]
     summary="Registrar un nuevo usuario",
 )
 def register(payload: UserCreate, db: SystemDb) -> dict:
-    """Registra un nuevo usuario (usa rol de sistema para email check)."""
+    """Registra un nuevo usuario.
+
+    Si se especifican organization_name y organization_slug, crea la
+    organización y asigna al usuario como admin automáticamente.
+    """
+    # Validar que si se especifica uno, se especifiquen ambos
+    if (payload.organization_name is None) != (payload.organization_slug is None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes especificar organization_name y organization_slug juntos",
+        )
+
     try:
         user, organization = register_user(
             db,
             email=payload.email,
             password=payload.password,
             full_name=payload.full_name,
+            organization_name=payload.organization_name,
+            organization_slug=payload.organization_slug,
         )
     except AuthError as exc:
         raise HTTPException(
