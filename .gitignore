@@ -44,3 +44,4 @@ coverage/
 # Backups de desarrollo
 *.bak
 *.bak.*
+main
