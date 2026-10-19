@@ -45,3 +45,14 @@ coverage/
 *.bak
 *.bak.*
 main
+
+# Environment files
+.env
+.env.*
+*.save
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.save
