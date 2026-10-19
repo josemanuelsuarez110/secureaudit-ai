@@ -56,3 +56,4 @@ Permitir que cualquier empresa conozca sus configuraciones de seguridad expuesta
 ## Licencia
 
 Propietario. Todos los derechos reservados.
+
